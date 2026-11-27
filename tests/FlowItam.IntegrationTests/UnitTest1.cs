@@ -16,9 +16,9 @@ public class DatabaseConfigurationTests
         var configuration = new ConfigurationBuilder().Build();
 
         var exception = Assert.Throws<InvalidOperationException>(
-            () => services.AddInfrastructure(configuration));
+            () => services.AddInfrastructure(configuration, isDevelopment: true));
 
-        Assert.That(exception!.Message, Does.Contain("DefaultConnection"));
+        Assert.That(exception!.Message, Does.Contain("Sqlite"));
     }
 
     [Test]
@@ -26,7 +26,8 @@ public class DatabaseConfigurationTests
     {
         var settings = new Dictionary<string, string?>
         {
-            ["ConnectionStrings:DefaultConnection"] =
+            ["Database:Provider"] = "PostgreSql",
+            ["ConnectionStrings:PostgreSql"] =
                 "Host=db.example.invalid;Database=flowitam;Username=test;Password=test;SSL Mode=Disable"
         };
         var configuration = new ConfigurationBuilder()
@@ -34,7 +35,7 @@ public class DatabaseConfigurationTests
             .Build();
         var services = new ServiceCollection();
 
-        services.AddInfrastructure(configuration);
+        services.AddInfrastructure(configuration, isDevelopment: false);
 
         using var provider = services.BuildServiceProvider();
         using var dbContext = provider.GetRequiredService<FlowItamDbContext>();
@@ -42,5 +43,45 @@ public class DatabaseConfigurationTests
             dbContext.Database.GetDbConnection().ConnectionString);
 
         Assert.That(connectionString.SslMode, Is.EqualTo(SslMode.VerifyFull));
+    }
+
+    [Test]
+    public void AddInfrastructure_uses_sqlite_in_development()
+    {
+        var settings = new Dictionary<string, string?>
+        {
+            ["Database:Provider"] = "Sqlite",
+            ["ConnectionStrings:Sqlite"] = "Data Source=:memory:"
+        };
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(settings)
+            .Build();
+        var services = new ServiceCollection();
+
+        services.AddInfrastructure(configuration, isDevelopment: true);
+
+        using var provider = services.BuildServiceProvider();
+        using var dbContext = provider.GetRequiredService<FlowItamDbContext>();
+
+        Assert.That(dbContext.Database.IsSqlite(), Is.True);
+        Assert.That(dbContext.Database.CanConnect(), Is.True);
+    }
+
+    [Test]
+    public void AddInfrastructure_rejects_sqlite_outside_development()
+    {
+        var settings = new Dictionary<string, string?>
+        {
+            ["Database:Provider"] = "Sqlite"
+        };
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(settings)
+            .Build();
+        var services = new ServiceCollection();
+
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => services.AddInfrastructure(configuration, isDevelopment: false));
+
+        Assert.That(exception!.Message, Does.Contain("Development"));
     }
 }

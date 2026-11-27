@@ -1,7 +1,7 @@
 using FlowItam.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
 namespace FlowItam.Infrastructure;
@@ -10,22 +10,49 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        bool isDevelopment)
     {
-        var connectionString = configuration.GetConnectionString("DefaultConnection");
+        var databaseProvider = configuration["Database:Provider"]
+            ?? (isDevelopment ? "Sqlite" : "PostgreSql");
+        var useSqlite = databaseProvider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase);
+        var usePostgreSql = databaseProvider.Equals("PostgreSql", StringComparison.OrdinalIgnoreCase);
+
+        if (!useSqlite && !usePostgreSql)
+        {
+            throw new InvalidOperationException(
+                $"Database provider '{databaseProvider}' is not supported.");
+        }
+
+        if (useSqlite && !isDevelopment)
+        {
+            throw new InvalidOperationException(
+                "SQLite is only supported in the Development environment.");
+        }
+
+        var connectionName = useSqlite ? "Sqlite" : "PostgreSql";
+        var connectionString = configuration.GetConnectionString(connectionName);
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException(
-                "Connection string 'DefaultConnection' is not configured.");
+                $"Connection string '{connectionName}' is not configured.");
         }
 
-        var connectionStringBuilder = new NpgsqlConnectionStringBuilder(connectionString)
-        {
-            SslMode = SslMode.VerifyFull
-        };
-
         services.AddDbContext<FlowItamDbContext>(options =>
-            options.UseNpgsql(connectionStringBuilder.ConnectionString));
+        {
+            if (useSqlite)
+            {
+                options.UseSqlite(connectionString);
+                return;
+            }
+
+            var connectionStringBuilder = new NpgsqlConnectionStringBuilder(connectionString)
+            {
+                SslMode = SslMode.VerifyFull
+            };
+
+            options.UseNpgsql(connectionStringBuilder.ConnectionString);
+        });
 
         return services;
     }
