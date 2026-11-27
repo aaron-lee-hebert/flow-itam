@@ -10,6 +10,11 @@ namespace FlowItam.Infrastructure;
 
 public static class DependencyInjection
 {
+    private const string SqliteMigrationsAssembly =
+        "FlowItam.Infrastructure.Migrations.Sqlite";
+    private const string PostgreSqlMigrationsAssembly =
+        "FlowItam.Infrastructure.Migrations.PostgreSql";
+
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
         IConfiguration configuration,
@@ -44,7 +49,9 @@ public static class DependencyInjection
         {
             if (useSqlite)
             {
-                options.UseSqlite(connectionString);
+                options.UseSqlite(
+                    connectionString,
+                    sqlite => sqlite.MigrationsAssembly(SqliteMigrationsAssembly));
                 return;
             }
 
@@ -53,7 +60,9 @@ public static class DependencyInjection
                 SslMode = SslMode.VerifyFull
             };
 
-            options.UseNpgsql(connectionStringBuilder.ConnectionString);
+            options.UseNpgsql(
+                connectionStringBuilder.ConnectionString,
+                postgres => postgres.MigrationsAssembly(PostgreSqlMigrationsAssembly));
         });
 
         services.AddIdentityCore<ApplicationUser>(options =>

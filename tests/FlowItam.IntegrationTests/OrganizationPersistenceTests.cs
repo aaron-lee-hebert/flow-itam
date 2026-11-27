@@ -34,7 +34,7 @@ public class OrganizationPersistenceTests
             await using var serviceProvider = services.BuildServiceProvider();
             var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             var dbContext = serviceProvider.GetRequiredService<FlowItamDbContext>();
-            await dbContext.Database.EnsureCreatedAsync();
+            await dbContext.Database.MigrateAsync();
 
             var user = new ApplicationUser
             {
