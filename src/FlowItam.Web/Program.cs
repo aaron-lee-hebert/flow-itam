@@ -1,7 +1,13 @@
+using FlowItam.Infrastructure;
+using FlowItam.Infrastructure.Persistence;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<FlowItamDbContext>("postgresql");
 
 var app = builder.Build();
 
@@ -25,5 +31,6 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
+app.MapHealthChecks("/health");
 
 app.Run();
