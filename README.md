@@ -29,6 +29,8 @@ dotnet tool restore
 SQLite and PostgreSQL migrations live in separate projects. Create migrations with the matching startup configuration and project:
 
 ```sh
+ASPNETCORE_ENVIRONMENT=Development \
+ConnectionStrings__Sqlite="Data Source=$PWD/src/FlowItam.Web/flowitam.dev.db" \
 dotnet tool run dotnet-ef migrations add MigrationName \
 	--project src/FlowItam.Infrastructure.Migrations.Sqlite \
 	--startup-project src/FlowItam.Web \
@@ -38,6 +40,8 @@ dotnet tool run dotnet-ef migrations add MigrationName \
 Apply the local SQLite migration to the Development database with:
 
 ```sh
+ASPNETCORE_ENVIRONMENT=Development \
+ConnectionStrings__Sqlite="Data Source=$PWD/src/FlowItam.Web/flowitam.dev.db" \
 dotnet tool run dotnet-ef database update \
 	--project src/FlowItam.Infrastructure.Migrations.Sqlite \
 	--startup-project src/FlowItam.Web

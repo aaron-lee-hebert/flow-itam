@@ -16,7 +16,10 @@ public class DatabaseConfigurationTests
         var configuration = new ConfigurationBuilder().Build();
 
         var exception = Assert.Throws<InvalidOperationException>(
-            () => services.AddInfrastructure(configuration, isDevelopment: true));
+            () => services.AddInfrastructure(
+                configuration,
+                isDevelopment: true,
+                contentRootPath: Path.GetTempPath()));
 
         Assert.That(exception!.Message, Does.Contain("Sqlite"));
     }
@@ -35,7 +38,10 @@ public class DatabaseConfigurationTests
             .Build();
         var services = new ServiceCollection();
 
-        services.AddInfrastructure(configuration, isDevelopment: false);
+        services.AddInfrastructure(
+            configuration,
+            isDevelopment: false,
+            contentRootPath: Path.GetTempPath());
 
         using var provider = services.BuildServiceProvider();
         using var dbContext = provider.GetRequiredService<FlowItamDbContext>();
@@ -58,7 +64,10 @@ public class DatabaseConfigurationTests
             .Build();
         var services = new ServiceCollection();
 
-        services.AddInfrastructure(configuration, isDevelopment: true);
+        services.AddInfrastructure(
+            configuration,
+            isDevelopment: true,
+            contentRootPath: Path.GetTempPath());
 
         using var provider = services.BuildServiceProvider();
         using var dbContext = provider.GetRequiredService<FlowItamDbContext>();
@@ -80,8 +89,35 @@ public class DatabaseConfigurationTests
         var services = new ServiceCollection();
 
         var exception = Assert.Throws<InvalidOperationException>(
-            () => services.AddInfrastructure(configuration, isDevelopment: false));
+            () => services.AddInfrastructure(
+                configuration,
+                isDevelopment: false,
+                contentRootPath: Path.GetTempPath()));
 
         Assert.That(exception!.Message, Does.Contain("Development"));
+    }
+
+    [Test]
+    public void AddInfrastructure_resolves_relative_sqlite_paths_against_content_root()
+    {
+        const string contentRootPath = "/tmp/flowitam-content-root";
+        var settings = new Dictionary<string, string?>
+        {
+            ["Database:Provider"] = "Sqlite",
+            ["ConnectionStrings:Sqlite"] = "Data Source=flowitam.dev.db"
+        };
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(settings)
+            .Build();
+        var services = new ServiceCollection();
+
+        services.AddInfrastructure(configuration, isDevelopment: true, contentRootPath);
+
+        using var provider = services.BuildServiceProvider();
+        using var dbContext = provider.GetRequiredService<FlowItamDbContext>();
+
+        Assert.That(
+            dbContext.Database.GetDbConnection().DataSource,
+            Is.EqualTo(Path.Combine(contentRootPath, "flowitam.dev.db")));
     }
 }

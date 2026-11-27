@@ -27,7 +27,10 @@ public class OrganizationPersistenceTests
             .Build();
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddInfrastructure(configuration, isDevelopment: true);
+        services.AddInfrastructure(
+            configuration,
+            isDevelopment: true,
+            contentRootPath: Path.GetTempPath());
             services.AddDefaultIdentity<ApplicationUser>(options =>
                     options.User.RequireUniqueEmail = true)
                 .AddRoles<IdentityRole<Guid>>()

@@ -1,4 +1,5 @@
 using FlowItam.Infrastructure.Persistence;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,7 +17,8 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
         IConfiguration configuration,
-        bool isDevelopment)
+        bool isDevelopment,
+        string contentRootPath)
     {
         var databaseProvider = configuration["Database:Provider"]
             ?? (isDevelopment ? "Sqlite" : "PostgreSql");
@@ -47,8 +49,17 @@ public static class DependencyInjection
         {
             if (useSqlite)
             {
+                var sqliteConnectionString = new SqliteConnectionStringBuilder(connectionString);
+                if (sqliteConnectionString.DataSource != ":memory:"
+                    && !Path.IsPathRooted(sqliteConnectionString.DataSource))
+                {
+                    sqliteConnectionString.DataSource = Path.GetFullPath(
+                        sqliteConnectionString.DataSource,
+                        contentRootPath);
+                }
+
                 options.UseSqlite(
-                    connectionString,
+                    sqliteConnectionString.ConnectionString,
                     sqlite => sqlite.MigrationsAssembly(SqliteMigrationsAssembly));
                 return;
             }

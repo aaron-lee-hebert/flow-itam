@@ -9,7 +9,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddInfrastructure(builder.Configuration, builder.Environment.IsDevelopment());
+builder.Services.AddInfrastructure(
+    builder.Configuration,
+    builder.Environment.IsDevelopment(),
+    builder.Environment.ContentRootPath);
 builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
     {
         options.User.RequireUniqueEmail = true;
