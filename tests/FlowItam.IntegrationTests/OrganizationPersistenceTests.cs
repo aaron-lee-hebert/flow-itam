@@ -28,6 +28,10 @@ public class OrganizationPersistenceTests
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddInfrastructure(configuration, isDevelopment: true);
+            services.AddDefaultIdentity<ApplicationUser>(options =>
+                    options.User.RequireUniqueEmail = true)
+                .AddRoles<IdentityRole<Guid>>()
+                .AddEntityFrameworkStores<FlowItamDbContext>();
 
         try
         {

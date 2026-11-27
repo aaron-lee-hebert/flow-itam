@@ -1,6 +1,4 @@
-using FlowItam.Infrastructure.Identity;
 using FlowItam.Infrastructure.Persistence;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -64,11 +62,6 @@ public static class DependencyInjection
                 connectionStringBuilder.ConnectionString,
                 postgres => postgres.MigrationsAssembly(PostgreSqlMigrationsAssembly));
         });
-
-        services.AddIdentityCore<ApplicationUser>(options =>
-                options.User.RequireUniqueEmail = true)
-            .AddRoles<IdentityRole<Guid>>()
-            .AddEntityFrameworkStores<FlowItamDbContext>();
 
         return services;
     }

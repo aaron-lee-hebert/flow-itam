@@ -1,12 +1,29 @@
 using FlowItam.Infrastructure;
+using FlowItam.Infrastructure.Identity;
 using FlowItam.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddInfrastructure(builder.Configuration, builder.Environment.IsDevelopment());
+builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
+    {
+        options.User.RequireUniqueEmail = true;
+        options.Password.RequiredLength = 12;
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    })
+    .AddRoles<IdentityRole<Guid>>()
+    .AddEntityFrameworkStores<FlowItamDbContext>();
+builder.Services.AddRazorPages();
+builder.Services.AddAuthorization(options =>
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build());
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<FlowItamDbContext>("database");
 
@@ -23,6 +40,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
@@ -31,6 +49,8 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
+
+app.MapRazorPages();
 
 var healthCheckOptions = new HealthCheckOptions();
 if (app.Environment.IsDevelopment())
@@ -52,6 +72,9 @@ if (app.Environment.IsDevelopment())
     };
 }
 
-app.MapHealthChecks("/health", healthCheckOptions);
+app.MapHealthChecks("/health", healthCheckOptions)
+    .AllowAnonymous();
 
 app.Run();
+
+public partial class Program;
