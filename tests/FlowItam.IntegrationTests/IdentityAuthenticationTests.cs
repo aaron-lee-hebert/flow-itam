@@ -17,6 +17,7 @@ public class IdentityAuthenticationTests
         });
 
         var registerResponse = await client.GetAsync("/Identity/Account/Register");
+        var registerHtml = await registerResponse.Content.ReadAsStringAsync();
         var loginResponse = await client.GetAsync("/Identity/Account/Login");
         var loginHtml = await loginResponse.Content.ReadAsStringAsync();
         var bootstrapResponse = await client.GetAsync("/lib/bootstrap/dist/css/bootstrap.min.css");
@@ -24,6 +25,7 @@ public class IdentityAuthenticationTests
         var healthResponse = await client.GetAsync("/health");
 
         Assert.That(registerResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(registerHtml, Does.Contain("Organization name"));
         Assert.That(loginResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(loginHtml, Does.Contain("/lib/bootstrap/dist/css/bootstrap.min.css"));
         Assert.That(loginHtml, Does.Contain("Flow ITAM"));

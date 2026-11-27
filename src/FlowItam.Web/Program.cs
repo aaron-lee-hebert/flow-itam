@@ -4,11 +4,13 @@ using FlowItam.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
+using FlowItam.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<OrganizationRegistrationService>();
 builder.Services.AddInfrastructure(
     builder.Configuration,
     builder.Environment.IsDevelopment(),
