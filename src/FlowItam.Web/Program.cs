@@ -1,5 +1,6 @@
 using FlowItam.Infrastructure;
 using FlowItam.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddInfrastructure(builder.Configuration, builder.Environment.IsDevelopment());
 builder.Services.AddHealthChecks()
-    .AddDbContextCheck<FlowItamDbContext>("postgresql");
+    .AddDbContextCheck<FlowItamDbContext>("database");
 
 var app = builder.Build();
 
@@ -31,6 +32,26 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-app.MapHealthChecks("/health");
+var healthCheckOptions = new HealthCheckOptions();
+if (app.Environment.IsDevelopment())
+{
+    healthCheckOptions.ResponseWriter = async (context, report) =>
+    {
+        var response = new
+        {
+            status = report.Status.ToString(),
+            checks = report.Entries.Select(entry => new
+            {
+                name = entry.Key,
+                status = entry.Value.Status.ToString(),
+                error = entry.Value.Exception?.GetBaseException().Message
+            })
+        };
+
+        await context.Response.WriteAsJsonAsync(response);
+    };
+}
+
+app.MapHealthChecks("/health", healthCheckOptions);
 
 app.Run();
