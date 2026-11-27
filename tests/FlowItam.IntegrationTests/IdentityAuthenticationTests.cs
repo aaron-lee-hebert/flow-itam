@@ -18,11 +18,16 @@ public class IdentityAuthenticationTests
 
         var registerResponse = await client.GetAsync("/Identity/Account/Register");
         var loginResponse = await client.GetAsync("/Identity/Account/Login");
+        var loginHtml = await loginResponse.Content.ReadAsStringAsync();
+        var bootstrapResponse = await client.GetAsync("/lib/bootstrap/dist/css/bootstrap.min.css");
         var homeResponse = await client.GetAsync("/");
         var healthResponse = await client.GetAsync("/health");
 
         Assert.That(registerResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(loginResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(loginHtml, Does.Contain("/lib/bootstrap/dist/css/bootstrap.min.css"));
+        Assert.That(loginHtml, Does.Contain("Flow ITAM"));
+        Assert.That(bootstrapResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(homeResponse.StatusCode, Is.EqualTo(HttpStatusCode.Redirect));
         Assert.That(homeResponse.Headers.Location?.OriginalString, Does.Contain("/Identity/Account/Login"));
         Assert.That(
